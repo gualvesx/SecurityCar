@@ -1,0 +1,116 @@
+<%- include('partials/header') %>
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+    <div class="container-fluid">
+        <!-- LOGO ADICIONADA AQUI -->
+        <a class="navbar-brand d-flex align-items-center" href="/dashboard">
+            <img src="https://i.imgur.com/832y68C.png" alt="Logo SecurityCar" height="30" class="d-inline-block align-text-top me-2">
+            SecurityCar
+        </a>
+        <div class="d-flex align-items-center">
+            <span class="navbar-text me-3 d-none d-sm-block"><i class="bi bi-person-circle me-1"></i> <%= user.username %></span>
+            <a href="/logout" class="btn btn-outline-light"><i class="bi bi-box-arrow-right me-2"></i>Sair</a>
+        </div>
+    </div>
+</nav>
+
+<main class="container mt-4">
+    <!-- O resto do arquivo continua o mesmo -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header"><h5 class="mb-0"><i class="bi bi-speedometer2 me-2"></i>Painel de Controlo</h5></div>
+        <div class="card-body">
+            <% if (typeof placaParaRegistrar !== 'undefined' && placaParaRegistrar) { %>
+                <div class="card bg-light-subtle border-info mb-4">
+                    <div class="card-body text-center">
+                        <h5 class="card-title text-info-emphasis"><i class="bi bi-info-circle-fill me-2"></i>Placa não encontrada</h5>
+                        <p class="card-text">O veículo com a placa <strong><%= placaParaRegistrar.toUpperCase() %></strong> não foi localizado. Preencha os dados abaixo para registá-lo.</p>
+                    </div>
+                </div>
+            <% } %>
+
+            <form action="/dashboard" method="GET" class="row g-3 align-items-end mb-4">
+                <div class="col-sm-8 col-md-6"><label for="placa_pesquisa" class="form-label">Pesquisar Veículo por Placa</label><input type="text" class="form-control" name="placa_pesquisa" placeholder="Digite a placa para buscar..."></div>
+                <div class="col-sm-4 col-md-3"><button type="submit" class="btn btn-secondary w-100 btn-lg"><i class="bi bi-search me-1"></i>Buscar</button></div>
+                <div class="col-sm-12 col-md-3"><a href="/dashboard" class="btn btn-outline-secondary w-100 btn-lg">Limpar Busca</a></div>
+            </form>
+            <hr>
+            <form action="/dashboard/registrar-entrada" method="POST" class="row g-3 align-items-end pt-3">
+                <div class="col-sm-6 col-md-3"><label for="placa" class="form-label">Placa</label><input type="text" class="form-control" name="placa" value="<%= (typeof placaParaRegistrar !== 'undefined' && placaParaRegistrar) ? placaParaRegistrar.toUpperCase() : '' %>" required></div>
+                <div class="col-sm-6 col-md-4"><label for="modelo" class="form-label">Modelo</label><input type="text" class="form-control" name="modelo" required></div>
+                <div class="col-sm-6 col-md-3"><label for="cor" class="form-label">Cor</label><input type="text" class="form-control" name="cor" required></div>
+                <div class="col-sm-6 col-md-2"><button type="submit" class="btn btn-success w-100 btn-lg">Registar</button></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tabela de Veículos Estacionados -->
+    <div class="card shadow-sm mt-4">
+        <div class="card-header bg-success text-white"><h5 class="mb-0"><i class="bi bi-card-list me-2"></i>Veículos no Pátio (<%= veiculosNoPatio.length %>)</h5></div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead><tr><th class="ps-3">Placa</th><th>Modelo</th><th>Cor</th><th>Entrada</th><th>Status</th><th class="text-center">Ações</th></tr></thead>
+                    <tbody>
+                        <% if (veiculosNoPatio.length > 0) { %>
+                            <% veiculosNoPatio.forEach(car => { %>
+                                <tr>
+                                    <td class="ps-3 fw-bold fs-5"><%= car.placa %></td>
+                                    <td><%= car.modelo %></td>
+                                    <td><%= car.cor %></td>
+                                    <td><%= new Date(car.horario_entrada).toLocaleString('pt-BR') %></td>
+                                    <td><span class="badge fs-6 text-bg-<%= car.bloqueado ? 'danger' : 'success' %>"><%= car.bloqueado ? 'Bloqueado' : 'Liberado' %></span></td>
+                                    <td class="text-center">
+                                        <form action="/dashboard/registrar-saida/<%= car.placa %>" method="POST" class="d-inline"><button type="submit" class="btn btn-primary" <%- car.bloqueado ? 'disabled' : '' %>>Registar Saída</button></form>
+                                        <form action="/dashboard/toggle-block/<%= car.placa %>" method="POST" class="d-inline"><button type="submit" class="btn btn-warning"><%= car.bloqueado ? 'Desbloquear' : 'Bloquear' %></button></form>
+                                    </td>
+                                </tr>
+                            <% }) %>
+                        <% } else { %>
+                            <tr><td colspan="6" class="text-center p-4">Nenhum veículo no pátio.</td></tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tabela de Histórico de Saídas -->
+    <div class="card shadow-sm mt-4 mb-5">
+        <div class="card-header"><h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Histórico de Saídas</h5></div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                     <thead><tr><th class="ps-3">Placa</th><th>Modelo</th><th>Cor</th><th>Saída</th><th>Status</th><th class="text-center">Ações</th></tr></thead>
+                    <tbody>
+                        <% const placasRenderizadas = new Set(); %>
+                        <% const placasAtualmenteNoPatio = new Set(veiculosNoPatio.map(v => v.placa)); %>
+                        <% if (historicoSaidas.length > 0) { %>
+                            <% historicoSaidas.forEach(car => { %>
+                                <tr class="opacity-75">
+                                    <td class="ps-3 fw-bold fs-5"><%= car.placa %></td>
+                                    <td><%= car.modelo %></td>
+                                    <td><%= car.cor %></td>
+                                    <td><%= new Date(car.horario_saida).toLocaleString('pt-BR') %></td>
+                                    <td><span class="badge fs-6 text-bg-<%= car.bloqueado ? 'danger' : 'secondary' %>"><%= car.bloqueado ? 'Bloqueado' : 'Liberado' %></span></td>
+                                    <td class="text-center">
+                                        <% if (!placasRenderizadas.has(car.placa)) { %>
+                                            <% if (!placasAtualmenteNoPatio.has(car.placa)) { %>
+                                                <form action="/dashboard/registrar-retorno/<%= car.placa %>" method="POST" class="d-inline"><button type="submit" class="btn btn-info" <%- car.bloqueado ? 'disabled' : '' %>>Retornou</button></form>
+                                            <% } %>
+                                            <form action="/dashboard/toggle-block/<%= car.placa %>" method="POST" class="d-inline"><button type="submit" class="btn btn-warning"><%= car.bloqueado ? 'Desbloquear' : 'Bloquear' %></button></form>
+                                            <% placasRenderizadas.add(car.placa); %>
+                                        <% } %>
+                                    </td>
+                                </tr>
+                            <% }) %>
+                        <% } else { %>
+                            <tr><td colspan="6" class="text-center p-4">Nenhum veículo no histórico.</td></tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</main>
+
+<%- include('partials/footer') %>

@@ -1,0 +1,20 @@
+{
+  "name": "projeto-estacionamento",
+  "version": "1.0.0",
+  "description": "Software de Segurança.",
+  "main": "server.js",
+  "scripts": {
+    "test": "jest ---coverage",
+    "start": "nodemon server.js"
+  },
+  "author": "SecurityCar",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^2.2.0",
+    "ejs": "^3.1.10",
+    "express": "^5.1.0",
+    "express-session": "^1.18.2",
+    "mysql2": "^3.15.0",
+    "nodemon": "^3.1.10"
+  }
+}
