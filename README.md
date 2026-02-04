@@ -33,6 +33,13 @@ A aplicação segue o padrão de camadas do Spring:
 * JDK 17 ou superior instalado.
 * Maven instalado (opcional, pode usar o `./mvnw`).
 
+Método,Endpoint,Funcionalidade
+GET,/api/veiculos,Lista todos os veículos
+POST,/api/veiculos,Registra um novo veículo
+GET,/api/veiculos/{id},Detalhes de um veículo específico
+PUT,/api/veiculos/{id},Atualiza dados do veículo
+DELETE,/api/veiculos/{id},Remove um registro do sistema
+
 ### Passo a Passo
 
 1. **Clonar o repositório:**
